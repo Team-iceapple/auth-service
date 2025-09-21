@@ -24,7 +24,7 @@ public class AuthController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request){
+    public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
 
         if (authService.authenticate(request.getUsername(), request.getPassword())) {
             String token = jwtTokenProvider.createToken(request.getUsername());
@@ -36,8 +36,8 @@ public class AuthController {
     @PostMapping("/extend")
     public ResponseEntity<TokenResponse> extend(@RequestHeader("Authorization") String bearerToken) {
         String token = bearerToken.replace("Bearer ", "");
-        try{
-            if(jwtTokenProvider.validateToken(token)) {
+        try {
+            if (jwtTokenProvider.validateToken(token)) {
                 String username = jwtTokenProvider.getUsername(token);
                 String newToken = jwtTokenProvider.createToken(username);
                 return ResponseEntity.ok(TokenResponse.builder().accessToken(newToken).build());
@@ -50,6 +50,25 @@ public class AuthController {
                     .body(TokenResponse.builder().message("유효하지 않은 토큰입니다").build());
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+
+    @PostMapping("/validate")
+    public ResponseEntity<TokenResponse> validate(@RequestHeader("Authorization") String bearerToken) {
+        String token = bearerToken.replace("Bearer ", "");
+        try {
+            if (jwtTokenProvider.validateToken(token)) {
+                return ResponseEntity.ok(TokenResponse.builder().message("유효한 토큰입니다").build());
+            }
+        } catch(ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(TokenResponse.builder().message("토큰이 만료되었습니다").build());
+        } catch(JwtException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(TokenResponse.builder().message("유효하지 않은 토큰입니다").build());
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(TokenResponse.builder().message("토큰 검증에 실패했습니다").build());
     }
 
     @PostMapping("/sign-up")
