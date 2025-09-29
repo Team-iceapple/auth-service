@@ -22,15 +22,22 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthService authService;
 
-
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
-
-        if (authService.authenticate(request.getUsername(), request.getPassword())) {
-            String token = jwtTokenProvider.createToken(request.getUsername());
-            return ResponseEntity.ok(TokenResponse.builder().accessToken(token).build());
+        if (request.getUsername() == null || request.getUsername().isBlank() || request.getPassword() == null ||  request.getPassword().isBlank()) {
+            return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        if (!authService.authenticate(request.getUsername(), request.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String token = jwtTokenProvider.createToken(request.getUsername());
+        return ResponseEntity.ok(
+                TokenResponse.builder()
+                        .accessToken(token)
+                        .build()
+        );
     }
 
     @PostMapping("/extend")
